@@ -44,6 +44,9 @@ while hasFrame(videoReader)
     
     birdsEyeImage = transformImage(birdsEyeConfig, frame);
     birdsEyeImage = rgb2gray(birdsEyeImage);
+
+    % Inefficiente calcolarlo a ogni iterazione
+    image_center = size(birdsEyeImage,2)/2;
     
     [h,w] = size(birdsEyeImage);
 
@@ -59,8 +62,11 @@ while hasFrame(videoReader)
 
     pixelCount = sum(binImage);
 
-    figure(f3); 
+    figure(f3);
     plot(pixelCount)
+    xline(image_center, '--r', 'Centro del veicolo')
+    xline(image_center+19, 'r')
+    xline(image_center-19, 'r')
     title("Frame n." + frameNumber );
     grid on; 
     grid minor;
@@ -74,6 +80,4 @@ while hasFrame(videoReader)
     % bianchi (più di 40)
 
     driftControl(pixelCount);
-
-
 end
