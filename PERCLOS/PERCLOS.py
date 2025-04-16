@@ -21,7 +21,7 @@ import os
 mp_face_mesh = mp.solutions.face_mesh
 face_mesh = mp_face_mesh.FaceMesh(
     max_num_faces=1,
-    refine_landmarks=True, # Enables  detailed eyes points
+    refine_landmarks=True,  # Enables detailed eyes points
     min_detection_confidence=0.5,
     min_tracking_confidence=0.5
 )
@@ -30,50 +30,34 @@ mp_drawing = mp.solutions.drawing_utils
 
 drawing_spec = mp_drawing.DrawingSpec(thickness=1, circle_radius=1)
 
-# Get the list of available capture devices (comment out)
-#index = 0
-#arr = []
-#while True:
-#    dev = cv2.VideoCapture(index)
-#    try:
-#        arr.append(dev.getBackendName)
-#    except:
-#        break
-#    dev.release()
-#    index += 1
-#print(arr)
+# 3 - Open the video source
+cap = cv2.VideoCapture(0)  # Local webcam (index start from 0)
 
 # Definizione punti di interesse occhi/bocca/naso
-# 33: angolo occhio DX
-# 263: angolo occhio SX
-# 1: punta naso
-# 61: angolo bocca DX
-# 291: angolo bocca SX
-# 199: mento
 punti_YawPitch = {33:None,263:None,1:None,61:None,291:None,199:None}
 
+# Punti per il calcolo dell'EAR
 punti_EAR_DX = {160:None,158:None,153:None,163:None,33:None,133:None}
-punti_EAR_SX = {263:None,384:None,387:None,373:None,380:None,362:None}
+punti_EAR_SX = {263:None,384:None,387:None,373:None,381:None,362:None}
 
-# 3 - Open the video source
-cap = cv2.VideoCapture(0) # Local webcam (index start from 0)
+# Variabili per calcolare PERCLOS
+t1, t2, t3, t4 = 0, 0, 0, 0
+is_eye_open = False
+perc_time = 0
+threshold_80 = 0.19 # Soglie a caso
+threshold_20 = 0.10
 
 # 4 - Iterate (within an infinite loop)
-while cap.isOpened(): 
-    
+while cap.isOpened():
     # 4.1 - Get the new frame
     success, image = cap.read() 
     
     start = time.time()
 
-    # Also convert the color space from BGR to RGB
     if image is None:
         break
-        #continue
-    #else: #needed with some cameras/video input format
-        #image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
-    # To improve performace
+    # To improve performance
     image.flags.writeable = False
     
     # 4.2 - Run MediaPipe on the frame
@@ -83,20 +67,6 @@ while cap.isOpened():
     image.flags.writeable = True
 
     img_h, img_w, img_c = image.shape
-
-    point_RER = [] # Right Eye Right
-    point_REB = [] # Right Eye Bottom
-    point_REL = [] # Right Eye Left
-    point_RET = [] # Right Eye Top
-
-    point_LER = [] # Left Eye Right
-    point_LEB = [] # Left Eye Bottom
-    point_LEL = [] # Left Eye Left
-    point_LET = [] # Left Eye Top
-
-    point_REIC = [] # Right Eye Iris Center
-    point_LEIC = [] # Left Eye Iris Center
-
 
     # 4.3 - Get the landmark coordinates
     if results.multi_face_landmarks:
@@ -118,25 +88,50 @@ while cap.isOpened():
                     punti_EAR_SX[idx] = int(lm.x * img_w), int(lm.y * img_h)
 
             # Speed reduction (comment out for full speed)
-            time.sleep(1/25) # [s]
+            time.sleep(1/25)  # [s]
 
         end = time.time()
-        totalTime = end-start
+        totalTime = end - start
 
-        if totalTime>0:
+        if totalTime > 0:
             fps = 1 / totalTime
         else:
-            fps=0
-        
-        
-        #print("FPS:", fps)
+            fps = 0
 
-        cv2.putText(image, f'FPS : {int(fps)}', (20,450), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 255), 2)
+        # Calcolo EAR
+        EAR_DX = (abs(punti_EAR_DX[160][1] - punti_EAR_DX[163][1]) + abs(punti_EAR_DX[158][1] - punti_EAR_DX[153][1])) / (2 * abs(punti_EAR_DX[33][0] - punti_EAR_DX[133][0]))
+        EAR_SX = (abs(punti_EAR_SX[384][1] - punti_EAR_SX[381][1]) + abs(punti_EAR_SX[387][1] - punti_EAR_SX[373][1])) / (2 * abs(punti_EAR_SX[362][0] - punti_EAR_SX[263][0]))
+
+        cv2.putText(image, f'EAR DX : {float(EAR_DX)}', (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 255), 2)
+        cv2.putText(image, f'EAR SX : {EAR_SX}', (20, 90), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 255), 2)
+
+        # Calcolo PERCLOS
+        if EAR_DX > threshold_80 and EAR_SX > threshold_80:
+            if t1 == 0:
+                t1 = time.time()
+            is_eye_open = True
+
+        if EAR_DX < threshold_20 and EAR_SX < threshold_20:
+            if t2 == 0:
+                t2 = time.time()
+            is_eye_open = False
+
+        if not is_eye_open and t2 > 0:
+            t3 = time.time()
+        if is_eye_open and t1 > 0:
+            t4 = time.time()
+
+        if t1 > 0 and t2 > 0 and t3 > 0 and t4 > 0:
+            perc_time = (t3 - t2) / (t4 - t1)
+            cv2.putText(image, f'PERCLOS : {perc_time:.2f}', (20, 140), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 255, 0), 2)
+
+        # Show FPS
+        cv2.putText(image, f'FPS : {int(fps)}', (20, 450), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 255), 2)
 
         # 4.5 - Show the frame to the user
-        cv2.imshow('Technologies for Autonomous Vehicles - Driver Monitoring Systems using AI code sample', image)       
+        cv2.imshow('Driver Monitoring - PERCLOS Calculation', image)       
                     
-    if cv2.waitKey(5) & 0xFF == 27:
+    if cv2.waitKey(5) & 0xFF == 27:  # Exit if ESC is pressed
         break
 
 # 5 - Close properly source and eventual log file
