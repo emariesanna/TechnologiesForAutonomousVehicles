@@ -123,32 +123,33 @@ while cap.isOpened():
                 print(f"eye state, from {str(eye_state)} to 1")
                 eye_state = 1
                 i1 = time.time()
-                print("1: "+str(t1))
                 if i1 > 0 and i4 > 0:
                     t4 = i4 - i2
+                    print("t4: "+str(t4))
+
         elif (EAR_DX < threshold_80 and EAR_DX > threshold_20) and (EAR_SX < threshold_80 and EAR_SX > threshold_20):
             if eye_state == 1:
                 print(f"eye state, from {str(eye_state)} to 2")
                 eye_state = 2
                 i2 = time.time()
-                print("i2: "+str(i2))
                 if i1 > 0 and i2 > 0:
                     t1 = i2 - i1
+                    print("t1: "+str(t1))
             elif eye_state == 3:
                 print(f"eye state, from {str(eye_state)} to 4")
                 eye_state = 4
                 i4 = time.time()
-                print("i4: "+str(i4))
                 if i3 > 0 and i4 > 0:
                     t3 = i4 - i3
+                    print("t3: "+str(t3))
         else: #elif EAR_DX <= threshold_20 and EAR_SX <= threshold_20:
             if eye_state == 2:
                 print(f"eye state, from {str(eye_state)} to 3")
                 eye_state = 3
                 i3 = time.time()
-                print("i3: "+str(i3))
                 if i3 > 0 and i2 > 0:
                     t2 = i3 - i2
+                    print("t2: "+str(t2))
 
         if t1 > 0 and t2 > 0 and t3 > 0 and t4 > 0:
             perc_time = (t3 - t2) / (t4 - t1)
