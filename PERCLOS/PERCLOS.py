@@ -5,6 +5,7 @@ import time
 import statistics as st
 import os
 
+# *****************************************************************************
 mp_face_mesh = mp.solutions.face_mesh
 face_mesh = mp_face_mesh.FaceMesh(
     max_num_faces=1,
@@ -14,88 +15,89 @@ face_mesh = mp_face_mesh.FaceMesh(
 )
 mp_drawing_styles = mp.solutions.drawing_styles
 mp_drawing = mp.solutions.drawing_utils
-
 drawing_spec = mp_drawing.DrawingSpec(thickness=1, circle_radius=1)
+cap = cv2.VideoCapture(0)  # Local webcam (index start from 0)
+# *****************************************************************************
 
-# Funzione per calcolare la distanza euclidea tra due punti
-def distanza_euclidea(p1, p2):
+# Function to calculate the Euclidean distance between two points
+def euclidean_distance(p1, p2):
     return np.linalg.norm(np.array(p1) - np.array(p2))
 
-cap = cv2.VideoCapture(0)  # Local webcam (index start from 0)
+# Dictionaries to store the coordinates of the points for face and eyes orientation
+yawPitchPoints = {33: None, 263: None, 1: None, 61: None, 291: None, 199: None}
+leftEyeOrientationPoints = {468: None, 33: None, 145: None, 133: None, 159: None}
+rightEyeOrientationPoints = {473: None, 362: None, 374: None, 263: None, 386: None}
 
-# Punti di interesse per gli occhi, bocca e naso
-punti_YawPitch = [33, 263, 1, 61, 291, 199]
+# Dictionaries to store the coordinates of the points for EAR calculation
+rightEARpoints = {160: None, 158: None, 153: None, 163: None, 33: None, 133: None}
+leftEARpoints = {263: None, 384: None, 387: None, 373: None, 381: None, 362: None}
 
-# Punti per il calcolo dell'EAR
-punti_EAR_DX = {160: None, 158: None, 153: None, 163: None, 33: None, 133: None}
-punti_EAR_SX = {263: None, 384: None, 387: None, 373: None, 381: None, 362: None}
-
-# Variabili per calcolare PERCLOS
+# PERCLOS calculation variables
+# Timestamps
 i1, i2, i3, i4 = 0, 0, 0, 0
+# Time intervals
 t1, t2, t3, t4 = 0, 0, 0, 0
-eye_state = -1
-perc_time = 0
-threshold_80 = 0.18  # Soglia di rilevamento occhi chiusi
-threshold_20 = 0.13  # Soglia di attenzione media
+# Eyes state
+# 1 = Eyes open, 2 = Eyes closing, 3 = Eyes closed, 4 = Eyes opening
+eyes_state = -1
+# Thresholds for EAR calculation
+threshold_80 = 0.18  # EAR threshold for 80% closed eyes
+threshold_20 = 0.13  # EAR threshold for 20% closed eyes
 
 scale_v = 1 # Fattore di scala per la visualizzazione dei vettori
 
 distraction_threshold = 30  # in degrees
 scale_factor = 0.7  # Fattore di scala per la visualizzazione dei vettori
 
-# Head pose calculation variables
-selected_landmarks = [1, 33, 263, 4]  # Aggiunto l'indice 4 per un punto aggiuntivo
-
 while cap.isOpened():
+    # *******************************
     success, image = cap.read()
     start = time.time()
-
     if image is None:
         break
-
     image.flags.writeable = False
-
     results = face_mesh.process(image)
-
     image.flags.writeable = True
-
+    # image dimensions in pixels
     img_h, img_w, _ = image.shape
+    # *******************************
+    
     face_2d = []
     face_3d = []
     right_eye_2d = []
     right_eye_3d = []
     left_eye_2d = []
     left_eye_3d = []
+    
 
     if results.multi_face_landmarks:
         for face_landmarks in results.multi_face_landmarks:
-            time.sleep(0.05)  # Delay to simulate processing time
-            # Calcolare EAR
+            time.sleep(1/25)  # Delay to simulate processing time
             for idx, lm in enumerate(face_landmarks.landmark):
-                if idx in punti_EAR_DX.keys():
-                    cv2.circle(image, (int(lm.x * img_w), int(lm.y * img_h)), radius=2, color=(255, 0, 0), thickness=-1)
-                    punti_EAR_DX[idx] = int(lm.x * img_w), int(lm.y * img_h)
-                if idx in punti_EAR_SX.keys():
-                    cv2.circle(image, (int(lm.x * img_w), int(lm.y * img_h)), radius=2, color=(255, 0, 0), thickness=-1)
-                    punti_EAR_SX[idx] = int(lm.x * img_w), int(lm.y * img_h)
                 # _______________________________________________________________________________
-                # Raccolta punti orientamento testa
-                if idx == 33 or idx == 263 or idx == 1 or idx == 61 or idx == 291 or idx == 199:
+                if idx in rightEARpoints.keys():
+                    # drow a circle on the image
+                    cv2.circle(image, (int(lm.x * img_w), int(lm.y * img_h)), radius=2, color=(255, 0, 0), thickness=-1)
+                    rightEARpoints[idx] = int(lm.x * img_w), int(lm.y * img_h)
+                if idx in leftEARpoints.keys():
+                    cv2.circle(image, (int(lm.x * img_w), int(lm.y * img_h)), radius=2, color=(255, 0, 0), thickness=-1)
+                    leftEARpoints[idx] = int(lm.x * img_w), int(lm.y * img_h)
+                # _______________________________________________________________________________
+                if idx in yawPitchPoints.keys():
                     if idx == 1:
                         nose_2d = (lm.x * img_w, lm.y * img_h)
                         nose_3d = (lm.x * img_w, lm.y * img_h, lm.z * 3000)
                     x, y = int(lm.x * img_w), int(lm.y * img_h)
                     face_2d.append([x, y])
                     face_3d.append([x, y, lm.z])
-                # Raccolta punti occhi DX/SX
-                if idx == 468 or idx == 33 or idx == 145 or idx == 133 or idx == 159:
+                if idx in rightEyeOrientationPoints.keys():
                     if idx == 468:
                         right_pupil_2d = (lm.x * img_w, lm.y * img_h)
                         right_pupil_3d = (lm.x * img_w, lm.y * img_h, lm.z * 3000)
                     x, y = int(lm.x * img_w), int(lm.y * img_h)
                     right_eye_2d.append([x, y])
                     right_eye_3d.append([x, y, lm.z])
-                if idx == 473 or idx == 362 or idx == 374 or idx == 263 or idx == 386:
+                if idx in leftEyeOrientationPoints.keys():
                     if idx == 473:
                         left_pupil_2d = (lm.x * img_w, lm.y * img_h)
                         left_pupil_3d = (lm.x * img_w, lm.y * img_h, lm.z * 3000)
@@ -109,13 +111,14 @@ while cap.isOpened():
             left_eye_3d = np.array(left_eye_3d, dtype=np.float64)
             right_eye_2d = np.array(right_eye_2d, dtype=np.float64)
             right_eye_3d = np.array(right_eye_3d, dtype=np.float64)
-            # The camera matrix
+            # Build the camera matrix
             focal_length = 1 * img_w
             cam_matrix = np.array([ [focal_length, 0, img_h / 2],
             [0, focal_length, img_w / 2],
             [0, 0, 1]])
             dist_matrix = np.zeros((4, 1), dtype=np.float64)# The distorsion parameters
-            # Solve PnP
+            # Solve the PnP problem to get the rotation and translation vectors
+            # success is a boolean, rot_vec and trans_vec are 3d vectors
             success, rot_vec, trans_vec = cv2.solvePnP(face_3d, face_2d, cam_matrix, dist_matrix)
             success_left_eye, rot_vec_left_eye, trans_vec_left_eye = cv2.solvePnP(left_eye_3d, left_eye_2d, cam_matrix, dist_matrix)
             success_right_eye, rot_vec_right_eye, trans_vec_right_eye = cv2.solvePnP(right_eye_3d, right_eye_2d, cam_matrix, dist_matrix)
@@ -129,7 +132,7 @@ while cap.isOpened():
             angles_right_eye, mtxR_right_eye, mtxQ_right_eye, Qx_right_eye, Qy_right_eye, Qz_right_eye = cv2.RQDecomp3x3(rmat_right_eye)
             pitch = angles[0] * 1800
             yaw = -angles[1] * 1800
-            roll = 180 + (np.arctan2(punti_EAR_DX[33][1] - punti_EAR_SX[263][1], punti_EAR_DX[33][0] - punti_EAR_SX[263][0]) * 180 / np.pi)
+            roll = 180 + (np.arctan2(rightEARpoints[33][1] - leftEARpoints[263][1], rightEARpoints[33][0] - leftEARpoints[263][0]) * 180 / np.pi)
             if roll > 180:
                 roll = roll - 360
             pitch_left_eye = angles_left_eye[0] * 1800
@@ -161,16 +164,16 @@ while cap.isOpened():
 
             # Calcolare EAR (distanza euclidea tra gli occhi)
             EAR_DX = (
-                distanza_euclidea(punti_EAR_DX[160], punti_EAR_DX[163]) +
-                distanza_euclidea(punti_EAR_DX[158], punti_EAR_DX[153])
+                euclidean_distance(rightEARpoints[160], rightEARpoints[163]) +
+                euclidean_distance(rightEARpoints[158], rightEARpoints[153])
             ) / (
-                2 * distanza_euclidea(punti_EAR_DX[33], punti_EAR_DX[133])
+                2 * euclidean_distance(rightEARpoints[33], rightEARpoints[133])
             )
             EAR_SX = (
-                distanza_euclidea(punti_EAR_SX[384], punti_EAR_SX[381]) +
-                distanza_euclidea(punti_EAR_SX[387], punti_EAR_SX[373])
+                euclidean_distance(leftEARpoints[384], leftEARpoints[381]) +
+                euclidean_distance(leftEARpoints[387], leftEARpoints[373])
             ) / (
-                2 * distanza_euclidea(punti_EAR_SX[362], punti_EAR_SX[263])
+                2 * euclidean_distance(leftEARpoints[362], leftEARpoints[263])
             )
 
             cv2.putText(image, f'EAR DX : {float(EAR_DX):.3f}', (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 255), 2)
@@ -178,33 +181,33 @@ while cap.isOpened():
 
             # Calcolare PERCLOS
             if EAR_DX >= threshold_80 and EAR_SX >= threshold_80:
-                if eye_state == 4 or eye_state == -1:
+                if eyes_state == 4 or eyes_state == -1:
                     print(f"eye state 1")
-                    eye_state = 1
+                    eyes_state = 1
                     i1 = time.time()
                     if i1 > 0 and i4 > 0:
                         t4 = i1 - i4
                         print("t4: "+str(t4))
 
             elif (EAR_DX < threshold_80 and EAR_DX > threshold_20) and (EAR_SX < threshold_80 and EAR_SX > threshold_20):
-                if eye_state == 1:
+                if eyes_state == 1:
                     print(f"eye state 2")
-                    eye_state = 2
+                    eyes_state = 2
                     i2 = time.time()
                     if i1 > 0 and i2 > 0:
                         t1 = i2 - i1
                         print("t1: "+str(t1))
-                elif eye_state == 3:
+                elif eyes_state == 3:
                     print(f"eye state 4")
-                    eye_state = 4
+                    eyes_state = 4
                     i4 = time.time()
                     if i3 > 0 and i4 > 0:
                         t3 = i4 - i3
                         print("t3: "+str(t3))
             else:
-                if eye_state == 2:
+                if eyes_state == 2:
                     print(f"eye state 3")
-                    eye_state = 3
+                    eyes_state = 3
                     i3 = time.time()
                     if i3 > 0 and i2 > 0:
                         t2 = i3 - i2
