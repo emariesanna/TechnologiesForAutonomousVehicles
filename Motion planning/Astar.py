@@ -49,8 +49,11 @@ def dijkstra(orig, dest, plot=False):
     pq = [(0, orig)] # pqueue: lista ordinata crescente con i nodi da visitare
     step = 0
     while pq:
-        _, node = heapq.heappop(pq) # estrae il primo nodo di pq
+        _, node = heapq.heappop(pq) # estrae il primo nodo di pq 
 
+        if step == 0:
+            print("Coordinata X node: "+str(G.nodes[node]['x']))
+        
         if node == dest:
             print("Iterations:", step)
             #plot_graph()
@@ -61,10 +64,10 @@ def dijkstra(orig, dest, plot=False):
             style_visited_edge((edge[0], edge[1], 0))
             neighbor = edge[1] # estraggo il nodo vicino
             weight = G.edges[(edge[0], edge[1], 0)]["weight"] # estraggo il peso del ramo
-            if G.nodes[neighbor]["distance"] > G.nodes[node]["distance"] + weight: # se la distanza del vicino è maggiore della distanza del nodo visitato + peso del ramo
+            if G.nodes[neighbor]["distance"] > G.nodes[node]["distance"] + weight: # se 
                 G.nodes[neighbor]["distance"] = G.nodes[node]["distance"] + weight
-                G.nodes[neighbor]["previous"] = node # salvi nel vicino il nodo migliore per raggiungerlo
-                heapq.heappush(pq, (G.nodes[neighbor]["distance"], neighbor)) # aggiorniamo in pqueue il nuovo valore della distanza
+                G.nodes[neighbor]["previous"] = node
+                heapq.heappush(pq, (G.nodes[neighbor]["distance"], neighbor))
                 for edge2 in G.out_edges(neighbor):
                     style_active_edge((edge2[0], edge2[1], 0))
         step += 1
