@@ -4,9 +4,12 @@ import heapq
 from math import sqrt
 import time
 import matplotlib.pyplot as plt
+import tqdm
+from tqdm import tqdm
 
 PLACE = "Amalfi"  # Options: Cagliari, Amalfi, Rome
 ALGORITHM = "Astar"  # Options: Dijkstra, Astar
+HEURISTIC = 1  # Options: 0 (euclidean), 1 (manhattan), 2 (chebyshev)
 
 def style_unvisited_edge(edge):        
     G.edges[edge]["color"] = "#d36206"
@@ -32,20 +35,20 @@ def heuristicDistance(node, dest):
     dx = G.nodes[node]['x'] - G.nodes[dest]['x']
     dy = G.nodes[node]['y'] - G.nodes[dest]['y']
 
-    if heuristicMode == 0:
-        # Distanza euclidea
-        #print("Distanza euclidea")
+    if HEURISTIC == 0:
         return sqrt(dx**2 + dy**2)
-    elif heuristicMode == 1:
-        # Distanza di Manhattan
-        #print("Distanza Manhattan")
+    elif HEURISTIC == 1:
         return abs(dx) + abs(dy)
+<<<<<<< Updated upstream
     elif heuristicMode == 2:
         # Distanza Chebyshev (massimo tra dx e dy)
         #print("Distanza Chebyshev")
+=======
+    elif HEURISTIC == 2:
+>>>>>>> Stashed changes
         return max(abs(dx), abs(dy))
     else:
-        raise ValueError("Modalità non supportata. Usa 0 (euclidea), 1 (Manhattan) o 2 (Chebyshev).")
+        raise ValueError("Invalid heuristic mode. Choose 0, 1, or 2.")
 
 def a_star(orig, dest, plot=False):
     for node in G.nodes:
@@ -214,32 +217,32 @@ if __name__ == "__main__":
     astar_times = []
     heuristicMode = 1 #Variabile globale
 
-    for i in range(100):
+    for i in tqdm(range(100), desc="Simulazioni"):
         start, end = get_start_end_nodes()
         initialize_edges()
         # Dijkstra
         for edge in G.edges:
             G.edges[edge]["dijkstra_uses"] = 0
-        print("Running Dijkstra")
+        # print("Running Dijkstra")
         start_time = time.time()
         dijkstra_iterations = dijkstra(start, end)
         dijkstra_time = time.time() - start_time
         dijkstra_iterations_list.append(dijkstra_iterations)
         dijkstra_times.append(dijkstra_time)
-        print(f"Done (Dijkstra time: {dijkstra_time:.4f} seconds)")
+        # print(f"Done (Dijkstra time: {dijkstra_time:.4f} seconds)")
         reconstruct_path(start, end, algorithm="dijkstra", plot=True)
         #plot_heatmap("dijkstra")
 
         # A*
         for edge in G.edges:
             G.edges[edge]["astar_uses"] = 0
-        print("Running A*")
+        # print("Running A*")
         start_time = time.time()
         astar_iterations = a_star(start, end)
         astar_time = time.time() - start_time
         astar_iterations_list.append(astar_iterations)
         astar_times.append(astar_time)
-        print(f"Done (A* time: {astar_time:.4f} seconds)")
+        # print(f"Done (A* time: {astar_time:.4f} seconds)")
         reconstruct_path(start, end, algorithm="astar", plot=True)
         #plot_heatmap("dijkstra")
         
@@ -255,14 +258,14 @@ if __name__ == "__main__":
     print("A* Times: min={:.4f}, max={:.4f}, mean={:.4f}".format(
         min(astar_times), max(astar_times), sum(astar_times)/len(astar_times)))
     
-x = list(range(1, len(dijkstra_iterations_list) + 1))
-# Iterazioni
-plt.figure(figsize=(12, 6))
-plt.plot(x, dijkstra_iterations_list, label="Dijkstra", linewidth=2)
-plt.plot(x, astar_iterations_list, label="A*", linewidth=2)
-plt.title("Andamento del numero di iterazioni per simulazione")
-plt.xlabel("Numero simulazione")
-plt.ylabel("Numero di iterazioni")
-plt.legend()
-plt.grid(True)
-plt.show()
+    x = list(range(1, len(dijkstra_iterations_list) + 1))
+    # Iterazioni
+    plt.figure(figsize=(12, 6))
+    plt.plot(x, dijkstra_iterations_list, label="Dijkstra", linewidth=2)
+    plt.plot(x, astar_iterations_list, label="A*", linewidth=2)
+    plt.title("Andamento del numero di iterazioni per simulazione")
+    plt.xlabel("Numero simulazione")
+    plt.ylabel("Numero di iterazioni")
+    plt.legend()
+    plt.grid(True)
+    plt.show()
