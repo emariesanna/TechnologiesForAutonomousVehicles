@@ -1,5 +1,6 @@
 import random
 import osmnx as ox
+import networkx as nx
 import heapq
 from math import sqrt
 import time
@@ -9,7 +10,7 @@ from tqdm import tqdm
 
 PLACE = "Rome"  # Options: Cagliari, Amalfi, Rome
 ALGORITHM = "Astar"  # Options: Dijkstra, Astar
-HEURISTIC = 1  # Options: 0 (euclidean), 1 (manhattan), 2 (chebyshev)
+HEURISTIC = 0  # Options: 0 (euclidean), 1 (manhattan)
 
 def style_unvisited_edge(edge):        
     G.edges[edge]["color"] = "#d36206"
@@ -36,13 +37,11 @@ def heuristicDistance(node, dest):
     dy = G.nodes[node]['y'] - G.nodes[dest]['y']
 
     if HEURISTIC == 0:
-        return sqrt(dx**2 + dy**2)
+        return sqrt(dx**2 + dy**2) / avg_speed
     elif HEURISTIC == 1:
-        return abs(dx) + abs(dy)
-    elif HEURISTIC == 2:
-        return max(abs(dx), abs(dy))
+        return abs(dx) + abs(dy) / avg_speed
     else:
-        raise ValueError("Invalid heuristic mode. Choose 0, 1, or 2.")
+        raise ValueError("Invalid heuristic mode. Choose 0 or 1.")
 
 def a_star(orig, dest, plot=False):
     for node in G.nodes:
@@ -52,34 +51,33 @@ def a_star(orig, dest, plot=False):
         G.nodes[node]["size"] = 0
     for edge in G.edges:
         style_unvisited_edge(edge)
-
     G.nodes[orig]["distance"] = 0
     G.nodes[orig]["size"] = 50
     G.nodes[dest]["size"] = 50
-
     open_set = [(heuristicDistance(orig, dest), orig)]
     g_score = {node: float("inf") for node in G.nodes}
     g_score[orig] = 0
     f_score = {node: float("inf") for node in G.nodes}
     f_score[orig] = heuristicDistance(orig, dest)
-
     came_from = {}
     step = 0
 
     while open_set:
-        step += 1
         _, current = heapq.heappop(open_set)
 
         if current == dest:
-            print("A* Iterations:", step)
+            # print("A* Iterations:", step)
             curr = dest
             while curr in came_from:
                 G.nodes[curr]["previous"] = came_from[curr]
                 curr = came_from[curr]
             return step
 
+        if g_score[current] + heuristicDistance(current, dest) != f_score[current]:
+            continue
+        if G.nodes[current]["visited"]:
+            continue
         G.nodes[current]["visited"] = True
-        # print(f"Current: {current}")
 
         for u, v, key, data in G.out_edges(current, keys=True, data=True):
             neighbor = v
@@ -94,11 +92,13 @@ def a_star(orig, dest, plot=False):
                 style_visited_edge((u, v, key))
                 for _, n, k in G.out_edges(neighbor, keys=True):
                     style_active_edge((neighbor, n, k))
+        step += 1
             
 def dijkstra(orig, dest, plot=False):
     for node in G.nodes:
         G.nodes[node]["visited"] = False
-        G.nodes[node]["distance"] = float("inf") # distanza complessiva tra il nodo di partenza e il nodo considerato 
+        # distanza complessiva tra il nodo di partenza e il nodo considerato 
+        G.nodes[node]["distance"] = float("inf") 
         G.nodes[node]["previous"] = None
         G.nodes[node]["size"] = 0
     for edge in G.edges:
@@ -112,7 +112,7 @@ def dijkstra(orig, dest, plot=False):
         _, node = heapq.heappop(pq) # estrae il primo nodo di pq
 
         if node == dest:
-            print("Iterations:", step)
+            # print("Iterations:", step)
             #plot_graph()
             return step
         if G.nodes[node]["visited"]: continue # break
@@ -121,10 +121,13 @@ def dijkstra(orig, dest, plot=False):
             style_visited_edge((edge[0], edge[1], 0))
             neighbor = edge[1] # estraggo il nodo vicino
             weight = G.edges[(edge[0], edge[1], 0)]["weight"] # estraggo il peso del ramo
-            if G.nodes[neighbor]["distance"] > G.nodes[node]["distance"] + weight: # se la distanza del vicino è maggiore della distanza del nodo visitato + peso del ramo
+            # se la distanza del vicino è maggiore della distanza del nodo visitato + peso del ramo
+            if G.nodes[neighbor]["distance"] > G.nodes[node]["distance"] + weight: 
                 G.nodes[neighbor]["distance"] = G.nodes[node]["distance"] + weight
-                G.nodes[neighbor]["previous"] = node # salvi nel vicino il nodo migliore per raggiungerlo
-                heapq.heappush(pq, (G.nodes[neighbor]["distance"], neighbor)) # aggiorniamo in pqueue il nuovo valore della distanza
+                # salvi nel vicino il nodo migliore per raggiungerlo
+                G.nodes[neighbor]["previous"] = node 
+                # aggiorniamo in pqueue il nuovo valore della distanza
+                heapq.heappush(pq, (G.nodes[neighbor]["distance"], neighbor)) 
                 for edge2 in G.out_edges(neighbor):
                     style_active_edge((edge2[0], edge2[1], 0))
         step += 1
@@ -148,11 +151,12 @@ def reconstruct_path(orig, dest, plot=False, algorithm=None):
     curr = dest
     while curr != orig:
         prev = G.nodes[curr]["previous"]
+        key = list(G[prev][curr].keys())[0]
         dist += G.edges[(prev, curr, 0)]["length"]
         speeds.append(G.edges[(prev, curr, 0)]["maxspeed"])
         style_path_edge((prev, curr, 0))
         if algorithm:
-            G.edges[(prev, curr, 0)][f"{algorithm}_uses"] = G.edges[(prev, curr, 0)].get(f"{algorithm}_uses", 0) + 1
+            G.edges[(prev, curr, key)][f"{algorithm}_uses"] = G.edges[(prev, curr, key)].get(f"{algorithm}_uses", 0) + 1
         curr = prev
     dist /= 1000
 
@@ -213,6 +217,9 @@ if __name__ == "__main__":
 
     for i in tqdm(range(100), desc="Simulazioni"):
         start, end = get_start_end_nodes()
+        if not nx.has_path(G, start, end):
+            print(f"\nNessun percorso tra {start} e {end}")
+            continue
         initialize_edges()
         # Dijkstra
         for edge in G.edges:
@@ -242,7 +249,7 @@ if __name__ == "__main__":
         
 
     #plot_heatmap("astar")
-    # Calcolo statistiche
+    # Computing statistics
     print("\nDijkstra Iterations: min={}, max={}, mean={:.2f}".format(
         min(dijkstra_iterations_list), max(dijkstra_iterations_list), sum(dijkstra_iterations_list)/len(dijkstra_iterations_list)))
     print("Dijkstra Times: min={:.4f}, max={:.4f}, mean={:.4f}".format(
@@ -253,10 +260,14 @@ if __name__ == "__main__":
         min(astar_times), max(astar_times), sum(astar_times)/len(astar_times)))
     
     x = list(range(1, len(dijkstra_iterations_list) + 1))
+    # Ordina entrambe le liste nello stesso ordine
+    dijkstra_sorted, astar_sorted = zip(*sorted(zip(dijkstra_iterations_list, astar_iterations_list)))
+    dijkstra_sorted = list(dijkstra_sorted)
+    astar_sorted = list(astar_sorted)
     # Iterazioni
     plt.figure(figsize=(12, 6))
-    plt.plot(x, dijkstra_iterations_list, label="Dijkstra", linewidth=2)
-    plt.plot(x, astar_iterations_list, label="A*", linewidth=2)
+    plt.plot(x, dijkstra_sorted, label="Dijkstra", linewidth=2)
+    plt.plot(x, astar_sorted, label="A*", linewidth=2)
     plt.title("Andamento del numero di iterazioni per simulazione")
     plt.xlabel("Numero simulazione")
     plt.ylabel("Numero di iterazioni")
