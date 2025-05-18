@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import tqdm
 from tqdm import tqdm
 
-PLACE = "Amalfi"  # Options: Cagliari, Amalfi, Rome
+PLACE = "Rome"  # Options: Cagliari, Amalfi, Rome
 ALGORITHM = "Astar"  # Options: Dijkstra, Astar
 HEURISTIC = 1  # Options: 0 (euclidean), 1 (manhattan), 2 (chebyshev)
 
