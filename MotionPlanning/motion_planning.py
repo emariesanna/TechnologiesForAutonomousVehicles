@@ -41,7 +41,7 @@ def heuristicDistance(node, dest):
         #print("Distanza Manhattan")
         return abs(dx) + abs(dy)
     elif heuristicMode == 2:
-        # Distanza Chebyshev (massimo tra dx e dy)ù
+        # Distanza Chebyshev (massimo tra dx e dy)
         #print("Distanza Chebyshev")
         return max(abs(dx), abs(dy))
     else:
@@ -241,8 +241,10 @@ if __name__ == "__main__":
         astar_times.append(astar_time)
         print(f"Done (A* time: {astar_time:.4f} seconds)")
         reconstruct_path(start, end, algorithm="astar", plot=True)
-        #plot_heatmap("astar")
+        #plot_heatmap("dijkstra")
+        
 
+    #plot_heatmap("astar")
     # Calcolo statistiche
     print("\nDijkstra Iterations: min={}, max={}, mean={:.2f}".format(
         min(dijkstra_iterations_list), max(dijkstra_iterations_list), sum(dijkstra_iterations_list)/len(dijkstra_iterations_list)))
