@@ -39,13 +39,7 @@ def heuristicDistance(node, dest):
         return sqrt(dx**2 + dy**2)
     elif HEURISTIC == 1:
         return abs(dx) + abs(dy)
-<<<<<<< Updated upstream
-    elif heuristicMode == 2:
-        # Distanza Chebyshev (massimo tra dx e dy)
-        #print("Distanza Chebyshev")
-=======
     elif HEURISTIC == 2:
->>>>>>> Stashed changes
         return max(abs(dx), abs(dy))
     else:
         raise ValueError("Invalid heuristic mode. Choose 0, 1, or 2.")
