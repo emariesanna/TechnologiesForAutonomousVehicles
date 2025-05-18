@@ -3,6 +3,7 @@ import osmnx as ox
 import heapq
 from math import sqrt
 import time
+import matplotlib.pyplot as plt
 
 PLACE = "Amalfi"  # Options: Cagliari, Amalfi, Rome
 ALGORITHM = "Astar"  # Options: Dijkstra, Astar
@@ -30,7 +31,21 @@ def style_path_edge(edge):
 def heuristicDistance(node, dest):
     dx = G.nodes[node]['x'] - G.nodes[dest]['x']
     dy = G.nodes[node]['y'] - G.nodes[dest]['y']
-    return sqrt(dx**2 + dy**2).real
+
+    if heuristicMode == 0:
+        # Distanza euclidea
+        #print("Distanza euclidea")
+        return sqrt(dx**2 + dy**2)
+    elif heuristicMode == 1:
+        # Distanza di Manhattan
+        #print("Distanza Manhattan")
+        return abs(dx) + abs(dy)
+    elif heuristicMode == 2:
+        # Distanza Chebyshev (massimo tra dx e dy)ù
+        #print("Distanza Chebyshev")
+        return max(abs(dx), abs(dy))
+    else:
+        raise ValueError("Modalità non supportata. Usa 0 (euclidea), 1 (Manhattan) o 2 (Chebyshev).")
 
 def a_star(orig, dest, plot=False):
     for node in G.nodes:
@@ -197,6 +212,7 @@ if __name__ == "__main__":
     dijkstra_times = []
     astar_iterations_list = []
     astar_times = []
+    heuristicMode = 1 #Variabile globale
 
     for i in range(100):
         start, end = get_start_end_nodes()
@@ -212,7 +228,7 @@ if __name__ == "__main__":
         dijkstra_times.append(dijkstra_time)
         print(f"Done (Dijkstra time: {dijkstra_time:.4f} seconds)")
         reconstruct_path(start, end, algorithm="dijkstra", plot=True)
-        plot_heatmap("dijkstra")
+        #plot_heatmap("dijkstra")
 
         # A*
         for edge in G.edges:
@@ -225,7 +241,7 @@ if __name__ == "__main__":
         astar_times.append(astar_time)
         print(f"Done (A* time: {astar_time:.4f} seconds)")
         reconstruct_path(start, end, algorithm="astar", plot=True)
-        plot_heatmap("astar")
+        #plot_heatmap("astar")
 
     # Calcolo statistiche
     print("\nDijkstra Iterations: min={}, max={}, mean={:.2f}".format(
@@ -236,3 +252,15 @@ if __name__ == "__main__":
         min(astar_iterations_list), max(astar_iterations_list), sum(astar_iterations_list)/len(astar_iterations_list)))
     print("A* Times: min={:.4f}, max={:.4f}, mean={:.4f}".format(
         min(astar_times), max(astar_times), sum(astar_times)/len(astar_times)))
+    
+x = list(range(1, len(dijkstra_iterations_list) + 1))
+# Iterazioni
+plt.figure(figsize=(12, 6))
+plt.plot(x, dijkstra_iterations_list, label="Dijkstra", linewidth=2)
+plt.plot(x, astar_iterations_list, label="A*", linewidth=2)
+plt.title("Andamento del numero di iterazioni per simulazione")
+plt.xlabel("Numero simulazione")
+plt.ylabel("Numero di iterazioni")
+plt.legend()
+plt.grid(True)
+plt.show()
