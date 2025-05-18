@@ -1,3 +1,4 @@
+from cmath import sqrt
 import osmnx as ox
 import random
 import heapq
@@ -8,13 +9,11 @@ def style_unvisited_edge(edge):
     G.edges[edge]["linewidth"] = 0.2
 
 def style_visited_edge(edge):
-    #G.edges[edge]["color"] = "#d36206"
     G.edges[edge]["color"] = "green"
     G.edges[edge]["alpha"] = 1
     G.edges[edge]["linewidth"] = 1
 
 def style_active_edge(edge):
-    #G.edges[edge]["color"] = '#e8a900'
     G.edges[edge]["color"] = "red"
     G.edges[edge]["alpha"] = 1
     G.edges[edge]["linewidth"] = 1
@@ -27,50 +26,69 @@ def style_path_edge(edge):
 def plot_graph():
     ox.plot_graph(
         G,
-        node_size =  [ G.nodes[node]["size"] for node in G.nodes ],
-        edge_color = [ G.edges[edge]["color"] for edge in G.edges ],
-        edge_alpha = [ G.edges[edge]["alpha"] for edge in G.edges ],
-        edge_linewidth = [ G.edges[edge]["linewidth"] for edge in G.edges ],
-        node_color = "white",
-        bgcolor = "#18080e"
+        node_size=[G.nodes[node]["size"] for node in G.nodes],
+        edge_color=[G.edges[edge]["color"] for edge in G.edges],
+        edge_alpha=[G.edges[edge]["alpha"] for edge in G.edges],
+        edge_linewidth=[G.edges[edge]["linewidth"] for edge in G.edges],
+        node_color="white",
+        bgcolor="#18080e"
     )
 
-def dijkstra(orig, dest, plot=False):
+def heuristicDistance(node, dest):
+    dx = G.nodes[node]['x'] - G.nodes[dest]['x']
+    dy = G.nodes[node]['y'] - G.nodes[dest]['y']
+    return sqrt(dx**2 + dy**2).real  # fix cmath.sqrt to real float
+
+def Astar(orig, dest, plot=False):
     for node in G.nodes:
         G.nodes[node]["visited"] = False
-        G.nodes[node]["distance"] = float("inf") # distanza complessiva tra il nodo di partenza e il nodo considerato 
+        G.nodes[node]["distance"] = float("inf")
         G.nodes[node]["previous"] = None
         G.nodes[node]["size"] = 0
     for edge in G.edges:
         style_unvisited_edge(edge)
+
     G.nodes[orig]["distance"] = 0
     G.nodes[orig]["size"] = 50
     G.nodes[dest]["size"] = 50
-    pq = [(0, orig)] # pqueue: lista ordinata crescente con i nodi da visitare
-    step = 0
-    while pq:
-        _, node = heapq.heappop(pq) # estrae il primo nodo di pq 
 
-        if step == 0:
-            print("Coordinata X node: "+str(G.nodes[node]['x']))
-        
-        if node == dest:
-            print("Iterations:", step)
-            #plot_graph()
-            return
-        if G.nodes[node]["visited"]: continue # break
-        G.nodes[node]["visited"] = True
-        for edge in G.out_edges(node): # per ogni ramo del nodo visitato 
-            style_visited_edge((edge[0], edge[1], 0))
-            neighbor = edge[1] # estraggo il nodo vicino
-            weight = G.edges[(edge[0], edge[1], 0)]["weight"] # estraggo il peso del ramo
-            if G.nodes[neighbor]["distance"] > G.nodes[node]["distance"] + weight: # se 
-                G.nodes[neighbor]["distance"] = G.nodes[node]["distance"] + weight
-                G.nodes[neighbor]["previous"] = node
-                heapq.heappush(pq, (G.nodes[neighbor]["distance"], neighbor))
-                for edge2 in G.out_edges(neighbor):
-                    style_active_edge((edge2[0], edge2[1], 0))
+    open_set = [(heuristicDistance(orig, dest), orig)]
+    g_score = {node: float("inf") for node in G.nodes}
+    g_score[orig] = 0
+    f_score = {node: float("inf") for node in G.nodes}
+    f_score[orig] = heuristicDistance(orig, dest)
+
+    came_from = {}
+    step = 0
+
+    while open_set:
         step += 1
+        _, current = heapq.heappop(open_set)
+
+        if current == dest:
+            print("A* Iterations:", step)
+            curr = dest
+            while curr in came_from:
+                G.nodes[curr]["previous"] = came_from[curr]
+                curr = came_from[curr]
+            return
+
+        G.nodes[current]["visited"] = True
+        print(f"Current: {current}")
+
+        for u, v, key, data in G.out_edges(current, keys=True, data=True):
+            neighbor = v
+            weight = data.get("weight", float("inf"))
+            tentative_g = g_score[current] + weight
+
+            if tentative_g < g_score.get(neighbor, float("inf")):
+                came_from[neighbor] = current
+                g_score[neighbor] = tentative_g
+                f_score[neighbor] = tentative_g + heuristicDistance(neighbor, dest)
+                heapq.heappush(open_set, (f_score[neighbor], neighbor))
+                style_visited_edge((u, v, key))
+                for _, n, k in G.out_edges(neighbor, keys=True):
+                    style_active_edge((neighbor, n, k))
 
 def reconstruct_path(orig, dest, plot=False, algorithm=None):
     for edge in G.edges:
@@ -80,11 +98,12 @@ def reconstruct_path(orig, dest, plot=False, algorithm=None):
     curr = dest
     while curr != orig:
         prev = G.nodes[curr]["previous"]
-        dist += G.edges[(prev, curr, 0)]["length"]
-        speeds.append(G.edges[(prev, curr, 0)]["maxspeed"])
-        style_path_edge((prev, curr, 0))
+        key = list(G[prev][curr].keys())[0]  # usa il primo arco tra prev e curr
+        dist += G.edges[(prev, curr, key)]["length"]
+        speeds.append(G.edges[(prev, curr, key)]["maxspeed"])
+        style_path_edge((prev, curr, key))
         if algorithm:
-            G.edges[(prev, curr, 0)][f"{algorithm}_uses"] = G.edges[(prev, curr, 0)].get(f"{algorithm}_uses", 0) + 1
+            G.edges[(prev, curr, key)][f"{algorithm}_uses"] = G.edges[(prev, curr, key)].get(f"{algorithm}_uses", 0) + 1
         curr = prev
     dist /= 1000
 
@@ -92,46 +111,41 @@ def plot_heatmap(algorithm):
     edge_colors = ox.plot.get_edge_colors_by_attr(G, f"{algorithm}_uses", cmap="hot")
     fig, _ = ox.plot_graph(
         G,
-        node_size =  [ G.nodes[node]["size"] for node in G.nodes ],
-        #edge_color = edge_colors,
-        edge_color = [ G.edges[edge]["color"] for edge in G.edges ],
-        edge_alpha = [ G.edges[edge]["alpha"] for edge in G.edges ],
-        edge_linewidth = [ G.edges[edge]["linewidth"] for edge in G.edges ],
-        bgcolor = "#18080e"
+        node_size=[G.nodes[node]["size"] for node in G.nodes],
+        edge_color=[G.edges[edge]["color"] for edge in G.edges],
+        edge_alpha=[G.edges[edge]["alpha"] for edge in G.edges],
+        edge_linewidth=[G.edges[edge]["linewidth"] for edge in G.edges],
+        bgcolor="#18080e"
     )
 
-#place_name = "Piedmont, California, USA"
-#place_name = "Rome, Latium, Italy"
-place_name = "Cagliari, Sardinia, Italy"
-#place_name = "Turin, Piedmont, Italy"
+# === CARICAMENTO GRAFO ===
+#place_name = "Cagliari, Sardinia, Italy"
+place_name = "Rome, Latium, Italy"
 G = ox.graph_from_place(place_name, network_type="drive")
 
 for edge in G.edges:
-    # Cleaning the "maxspeed" attribute, some values are lists, some are strings, some are None
     maxspeed = 40
     if "maxspeed" in G.edges[edge]:
         maxspeed = G.edges[edge]["maxspeed"]
-        if type(maxspeed) == list:
-            speeds = [ int(speed) for speed in maxspeed ]
-            maxspeed = min(speeds)
-        elif type(maxspeed) == str:
-            maxspeed = maxspeed.strip(" mph")
-            maxspeed = int(maxspeed)
+        if isinstance(maxspeed, list):
+            speeds = [int(str(speed).strip(" mph")) for speed in maxspeed if str(speed).strip(" mph").isdigit()]
+            maxspeed = min(speeds) if speeds else 40
+        elif isinstance(maxspeed, str):
+            maxspeed = int(maxspeed.strip(" mph")) if maxspeed.strip(" mph").isdigit() else 40
     G.edges[edge]["maxspeed"] = maxspeed
-    # Adding the "weight" attribute (time = distance / speed)
     G.edges[edge]["weight"] = G.edges[edge]["length"] / maxspeed
 
-
 for edge in G.edges:
-    G.edges[edge]["dijkstra_uses"] = 0
+    G.edges[edge]["astar_uses"] = 0
 
+#start = list(G.nodes)[0]
+#end = list(G.nodes)[-1]
 start = random.choice(list(G.nodes))
 end = random.choice(list(G.nodes))
 
-print("Running Dijkstra")
-dijkstra(start, end)
-print( "Done")
+print("Running A*")
+Astar(start, end)
+print("Done")
 
-reconstruct_path(start, end, algorithm="dijkstra", plot=True)
-plot_heatmap("dijkstra")
-
+reconstruct_path(start, end, algorithm="astar", plot=True)
+plot_heatmap("astar")
