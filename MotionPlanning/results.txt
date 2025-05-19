@@ -1,0 +1,17 @@
+Amalfi
+Dijkstra Iterations: min=0, max=39, mean=18.11
+Dijkstra Times: min=0.0001, max=0.0007, mean=0.0002
+A* Iterations: min=0, max=38, mean=15.11
+A* Times: min=0.0001, max=0.0004, mean=0.0002
+
+Cagliari
+Dijkstra Iterations: min=32, max=3898, mean=1933.06
+Dijkstra Times: min=0.0054, max=0.0356, mean=0.0199
+A* Iterations: min=18, max=3765, mean=1198.83
+A* Times: min=0.0060, max=0.0365, mean=0.0159
+
+Rome
+Dijkstra Iterations: min=375, max=43115, mean=22468.33
+Dijkstra Times: min=0.0822, max=0.4559, mean=0.2719
+A* Iterations: min=277, max=39054, mean=13569.77
+A* Times: min=0.0889, max=0.4503, mean=0.2140   
