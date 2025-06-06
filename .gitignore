@@ -1,1 +1,4 @@
-Lidar_Radar_Segmentation\man-truckscenes
+Lidar_Radar_Segmentation/Dataset/man-truckscenes/samples
+Lidar_Radar_Segmentation/Dataset/man-truckscenes/sweeps
+Lidar_Radar_Segmentation/Dataset/man-truckscenes/v1.0-mini
+.venv310
