@@ -112,10 +112,12 @@ def build_infos(
         pickle.dump(radar_val, f)
 
     # Genera split file
-    with open(os.path.join(output_dir, 'train.txt'), 'w') as f:
+    imagesets_dir = os.path.join(output_dir, 'ImageSets')
+    os.makedirs(imagesets_dir, exist_ok=True)
+    with open(os.path.join(imagesets_dir, 'train.txt'), 'w') as f:
         for token in train_tokens:
             f.write(token + '\n')
-    with open(os.path.join(output_dir, 'val.txt'), 'w') as f:
+    with open(os.path.join(imagesets_dir, 'val.txt'), 'w') as f:
         for token in val_tokens:
             f.write(token + '\n')
 

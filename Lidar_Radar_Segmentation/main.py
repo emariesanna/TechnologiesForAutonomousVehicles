@@ -6,9 +6,9 @@ def main():
     annotation_path = 'Lidar_Radar_Segmentation/Dataset/man-truckscenes/v1.0-mini/sample_annotation.json'
     sample_data_path = 'Lidar_Radar_Segmentation/Dataset/man-truckscenes/v1.0-mini/sample_data.json'
     lidar_dir = 'Lidar_Radar_Segmentation/Dataset/man-truckscenes/samples/LIDAR_LEFT'
-    lidar_bin_dir = 'Lidar_Radar_Segmentation/Dataset/man-truckscenes/samples/LIDAR_LEFT_BIN'
+    lidar_bin_dir = 'Lidar_Radar_Segmentation/Dataset/man-truckscenes/lidar_bin'
     radar_dir = 'Lidar_Radar_Segmentation/Dataset/man-truckscenes/samples/RADAR_LEFT_FRONT'
-    radar_bin_dir = 'Lidar_Radar_Segmentation/Dataset/man-truckscenes/samples/RADAR_LEFT_FRONT_BIN'
+    radar_bin_dir = 'Lidar_Radar_Segmentation/Dataset/man-truckscenes/radar_bin'
     output_path = 'Lidar_Radar_Segmentation/Dataset/man-truckscenes'
 
     convert_pcd_to_bin(lidar_dir, lidar_bin_dir)
