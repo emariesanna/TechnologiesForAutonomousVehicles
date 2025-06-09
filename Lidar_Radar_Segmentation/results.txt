@@ -1,0 +1,17 @@
+20 samples
+Results:
+Total Samples Processed: 20
+Total Good Matches: 37
+Total Missed: 125
+Total Poor Matches: 544
+Total Over-segmented: 6
+Total Under-segmented: 39
+
+One per scene
+Total Samples Processed: 10
+Total Good Matches: 12
+Total Missed: 318
+Total Poor Matches: 255
+Total Over-segmented: 0
+Total Under-segmented: 6
+

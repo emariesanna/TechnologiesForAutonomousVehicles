@@ -1,0 +1,7 @@
+# pip install -r requirements.txt
+numpy
+tqdm
+scikit-learn
+scipy
+matplotlib
+truckscenes-devkit[all]

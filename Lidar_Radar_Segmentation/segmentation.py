@@ -20,7 +20,7 @@ def segmentation(points, threshold=0.7, min_samples=10):
     if points.ndim != 2 or points.shape[1] != 3:
         raise ValueError("I punti devono essere un array Nx3.")
     # calcola il clustering sui punti privati delle intensità
-    print("Segmenting points with DBSCAN...")
+    # print("Segmenting points with DBSCAN...")
     clustering = DBSCAN(eps=threshold, min_samples=min_samples).fit(points)
     # ottieni le etichette dei cluster
     labels = clustering.labels_
@@ -80,7 +80,6 @@ def get_OBB(segment):
 def draw_boxes_top_view(points, boxes, gtboxes=None):
     plt.figure(figsize=(12, 8))
 
-    # Calcolo dinamico dei limiti dell'altezza
     z_min, z_max = np.min(points[:, 2]), np.max(points[:, 2])
 
     sc = plt.scatter(
@@ -98,7 +97,6 @@ def draw_boxes_top_view(points, boxes, gtboxes=None):
         size = box['size']
         quat = box['rotation']
 
-        # Converti quaternion in formato [x, y, z, w] se necessario
         quat_xyzw = np.roll(quat, -1)  # [w, x, y, z] → [x, y, z, w]
         rot = R.from_quat(quat_xyzw)
         rot_matrix = rot.as_matrix()
@@ -120,11 +118,9 @@ def draw_boxes_top_view(points, boxes, gtboxes=None):
         y = world_corners[:, 1]
         plt.plot(np.append(x, x[0]), np.append(y, y[0]), color=color, linestyle=linestyle, linewidth=2)
 
-    # Disegna box predette in rosso
     for box in boxes:
         draw_single_box(box, color='red')
 
-    # Disegna box GT in blu tratteggiate se presenti
     if gtboxes is not None:
         for gt in gtboxes:
             draw_single_box(gt, color='blue', linestyle='--')

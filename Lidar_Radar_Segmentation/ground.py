@@ -3,15 +3,8 @@ import matplotlib.pyplot as plt
 from sklearn.linear_model import RANSACRegressor
 
 
-
 def remove_ground_plane(points, threshold=0.2, max_z=1.5):
-    """
-    Rimuove i punti del terreno stimati con RANSAC.
-    Returns:
-        points_no_ground: punti senza terreno
-        inlier_mask: maschera booleana dei punti classificati come terreno
-        model: piano stimato (RANSAC)
-    """
+
     candidate_points = points[points[:, 2] < max_z]
 
     if len(candidate_points) < 10:
@@ -24,29 +17,23 @@ def remove_ground_plane(points, threshold=0.2, max_z=1.5):
     model.fit(X, y)
 
     z_pred = model.predict(points[:, :2])
-    dist = np.abs(points[:, 2] - z_pred)
-    inlier_mask = dist < threshold
+    inlier_mask = points[:, 2] < z_pred + threshold
 
     return points[~inlier_mask], inlier_mask, model
 
 
 
 def plot_ground_plane(points, inlier_mask, model, num_grid=10):
-    """
-    Visualizza i punti con il piano stimato.
-    """
+
     fig = plt.figure(figsize=(12, 8))
     ax = fig.add_subplot(111, projection='3d')
 
-    # Punti del terreno
     ax.scatter(points[inlier_mask][:, 0], points[inlier_mask][:, 1], points[inlier_mask][:, 2],
                c='brown', s=1, label='Ground Points')
 
-    # Punti rimanenti
     ax.scatter(points[~inlier_mask][:, 0], points[~inlier_mask][:, 1], points[~inlier_mask][:, 2],
                c='blue', s=1, label='Non-Ground Points')
 
-    # Piano stimato (superficie)
     xlim = ax.get_xlim()
     ylim = ax.get_ylim()
 

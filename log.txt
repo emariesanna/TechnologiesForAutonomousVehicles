@@ -1,0 +1,22 @@
+2025-06-09 03:13:02,041 [INFO] Sample 10:
+2025-06-09 03:13:02,049 [INFO] Processed RADAR_RIGHT_BACK with 741 points.
+2025-06-09 03:13:02,055 [INFO] Processed RADAR_RIGHT_SIDE with 720 points.
+2025-06-09 03:13:02,065 [INFO] Processed RADAR_RIGHT_FRONT with 800 points.
+2025-06-09 03:13:02,074 [INFO] Processed RADAR_LEFT_FRONT with 702 points.
+2025-06-09 03:13:02,081 [INFO] Processed RADAR_LEFT_SIDE with 800 points.
+2025-06-09 03:13:02,093 [INFO] Processed LIDAR_LEFT with 81992 points.
+2025-06-09 03:13:02,107 [INFO] Processed LIDAR_RIGHT with 81412 points.
+2025-06-09 03:13:02,118 [INFO] Processed LIDAR_TOP_FRONT with 19551 points.
+2025-06-09 03:13:02,127 [INFO] Processed LIDAR_TOP_LEFT with 24053 points.
+2025-06-09 03:13:02,134 [INFO] Processed LIDAR_REAR with 19793 points.
+2025-06-09 03:13:02,136 [INFO] Total points after fusion: 230564
+2025-06-09 03:13:35,631 [INFO] Points after z-thresholding: 143148
+2025-06-09 03:13:35,697 [INFO] Points after voxel downsampling: 70980
+2025-06-09 03:13:38,021 [INFO] Number of predicted boxes: 188
+2025-06-09 03:13:38,021 [INFO] Number of ground truth boxes: 36
+2025-06-09 03:13:55,875 [WARNING] Ignoring fixed y limits to fulfill fixed data aspect with adjustable data limits.
+2025-06-09 03:14:32,802 [INFO] Good matches: 2
+2025-06-09 03:14:32,802 [INFO] Missed: 5
+2025-06-09 03:14:32,802 [INFO] Poor matches: 29
+2025-06-09 03:14:32,802 [INFO] Over-segmented: 0
+2025-06-09 03:14:32,802 [INFO] Under-segmented: 3
